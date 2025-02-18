@@ -1,6 +1,6 @@
-# Modified ConvNeXt for Alzheimer's disease classification
+# AD-NeXt: AD Classification with Self-Supervised Pretraining
 
-The code of "Designing efficient 3D-ConvNeXt model for Alzheimer's Disease classification" paper.
+The code of "AD-NeXt: Efficient Alzheimer's Disease Classification with Self-Supervised Pretraining" paper.
 
 ![architecture](./assets/architecture.PNG)
 
@@ -49,6 +49,6 @@ python kfold_train.py  --config_file ./configs/convnext3d.yaml --classes_to_use 
 
 # Comparison with other models
 
-![results](./assets/results_table.PNG)
+
 
 # Notes
