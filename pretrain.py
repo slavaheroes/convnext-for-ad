@@ -127,6 +127,7 @@ def pretrain_model():
     logger.info(cfg)
     logger.info(args)
 
+    os.environ["WANDB_API_KEY"] = OmegaConf.load("keys.yaml")["WANDB_API_KEY"]
     run = wandb.init(project="AD-NEXT", name=FILENAME, config=OmegaConf.to_container(cfg), dir=os.path.join(args.output_dir, FILENAME),
                 tags=['PT'], group=FILENAME)
     run.log_code(".", include_fn=lambda path: path.endswith(".py") or path.endswith(".yaml"))
