@@ -29,7 +29,7 @@ COPY . .
 RUN cd MinkowskiEngine; export CXX=c++; export CUDA_HOME=/usr/local/cuda; python setup.py install --blas=openblas --force_cuda
 # Copy the repo
 
-# RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt
 # RUN uv pip install setuptools ninja numpy
 # # Build & install
 # RUN cd MinkowskiEngine && \
