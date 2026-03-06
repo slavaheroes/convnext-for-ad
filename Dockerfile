@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     cmake \
     ninja-build \
     libopenblas-dev \
+    nano \
     git xterm xauth openssh-server tmux wget mate-desktop-environment-core
 
 RUN apt-get clean
