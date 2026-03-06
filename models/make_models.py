@@ -31,10 +31,10 @@ def make_vanilla_model(cfg, args):
     Make models for vanilla classifcation training
 
     """
-    if cfg['MODEL']['TYPE'] in ['ViT3D']:
-        assert cfg['MODEL']['TYPE'] in _models_factory.keys(), cfg['MODEL']['TYPE'] + ' not in the model factory list'
+    if cfg.model.type in ['ViT3D']:
+        assert cfg.model.type in _models_factory.keys(), cfg.model.type + ' not in the model factory list'
 
-        model = _models_factory[cfg['MODEL']['TYPE']](
+        model = _models_factory[cfg.model.type](
             img_size        = cfg['MODEL']['img_size'],
             patch_size      = cfg['MODEL']['patch_size'],
             in_chans        = cfg['MODEL']['in_chans'],
@@ -61,10 +61,10 @@ def make_vanilla_model(cfg, args):
         
         
         
-    elif cfg['MODEL']['TYPE'] in ['DenseNet121', 'ResNet10', 'ResNet18', 'ResNet34', 'ResNet101', 'ResNet152']:
-        assert cfg['MODEL']['TYPE'] in _models_factory.keys(), cfg['MODEL']['TYPE'] + '_' + ' not in the model factory list'
+    elif cfg.model.type in ['DenseNet121', 'ResNet10', 'ResNet18', 'ResNet34', 'ResNet101', 'ResNet152']:
+        assert cfg.model.type in _models_factory.keys(), cfg.model.type + '_' + ' not in the model factory list'
 
-        model = _models_factory[cfg['MODEL']['TYPE']](
+        model = _models_factory[cfg.model.type](
             spatial_dims     = 3,
             n_input_channels = 1,
             num_classes      = cfg['MODEL']['n_classes']
@@ -72,8 +72,8 @@ def make_vanilla_model(cfg, args):
         
         print(f'Traditional Convolution {cfg["MODEL"]["TYPE"]} model built.')
     
-    elif cfg['MODEL']['TYPE'] in ['ConvNeXtV2_3D']:
-        assert cfg['MODEL']['TYPE'] in _models_factory.keys(), cfg['MODEL']['TYPE'] + ' not in the model factory list'
+    elif cfg.model.type in ['ConvNeXtV2_3D']:
+        assert cfg.model.type in _models_factory.keys(), cfg.model.type + ' not in the model factory list'
         
         if args.size in ['small']:
             cfg['MODEL']['depths'] = [3, 3, 9, 3]
@@ -87,8 +87,8 @@ def make_vanilla_model(cfg, args):
         elif args.size in ['tiny']:
             cfg['MODEL']['depths'] = [2, 2, 6, 2]
             cfg['MODEL']['dims'] = [16, 32, 64, 128]
-            
-        model = _models_factory[cfg['MODEL']['TYPE']](
+
+        model = _models_factory[cfg.model.type](
             in_chans        = cfg['MODEL']['in_chans'],
             num_classes     = cfg['MODEL']['n_classes'],
             drop_path_rate  = cfg['MODEL']['drop_path_rate'],
@@ -105,7 +105,7 @@ def make_vanilla_model(cfg, args):
         print(f'Depths: {cfg["MODEL"]["depths"]}, Dims: {cfg["MODEL"]["dims"]}')
         print(f'Drop path rate: {cfg["MODEL"]["drop_path_rate"]}')
         
-    elif cfg['MODEL']['TYPE'] in ['MedNeXt', 'MedNext']:
+    elif cfg.model.type in ['MedNeXt', 'MedNext']:
         model = MedNeXtEncoderOnly(
             in_channels=cfg['MODEL']['in_chans'],
             n_classes=cfg['MODEL']['n_classes'],
@@ -126,50 +126,35 @@ def make_pt_model(cfg, args):
     """Build a 3D MAE
     to be used for pre-training
     """
-    if cfg['MODEL']['TYPE'] in ['FCMAE_3D']:
-        assert cfg['MODEL']['TYPE'] in _models_factory.keys(), \
-            f"{cfg['MODEL']['TYPE']} not in the model factory list"
+    if cfg.model.type in ['FCMAE_3D']:
+        assert cfg.model.type  in _models_factory.keys(), \
+            f"{cfg.model.type} not in the model factory list"
         
         if args.size in ['small']:
-            cfg['MODEL']['depths'] = [3, 3, 9, 3]
-            cfg['MODEL']['dims'] = [32, 64, 128, 256]
+            cfg.model.depths = [3, 3, 9, 3]
+            cfg.model.dims = [32, 64, 128, 256]
         elif args.size in ['base']:
-            cfg['MODEL']['depths'] = [3, 3, 27, 3]
-            cfg['MODEL']['dims'] = [64, 128, 256, 512]
+            cfg.model.depths = [3, 3, 27, 3]
+            cfg.model.dims = [64, 128, 256, 512]
         elif args.size in ['large']:
-            cfg['MODEL']['depths'] = [3, 3, 27, 3]
-            cfg['MODEL']['dims'] = [128, 256, 512, 512]
+            cfg.model.depths = [3, 3, 27, 3]
+            cfg.model.dims = [128, 256, 512, 512]
         elif args.size in ['tiny']:
-            cfg['MODEL']['depths'] = [2, 2, 6, 2]
-            cfg['MODEL']['dims'] = [16, 32, 64, 128]
+            cfg.model.depths = [2, 2, 6, 2]
+            cfg.model.dims = [16, 32, 64, 128]
         
-        model_mae = _models_factory[cfg['model']['type']](
+        model = _models_factory[cfg.model.type](
             # remove 'type' key and pass all unpacking
-            **{key: value for key, value in cfg['model'].items() if key != 'type'}
+            **{key: value for key, value in cfg.model.items() if key != 'type'}
         )
         
-        print('FCMAE_3D model built with parameters ', cfg['model'])
+        print('FCMAE_3D model built with parameters ', cfg.model)
     
-    elif cfg['MODEL']['TYPE'] in ['MaskedAutoencoderViT3D']:
-        assert cfg['MODEL']['TYPE'] in _models_factory.keys(), cfg['MODEL']['TYPE'] + ' not in the model factory list'
-
-        model_mae = _models_factory[cfg['MODEL']['TYPE']](
-            img_size          = cfg['MODEL']['img_size'],
-            patch_size        = cfg['MODEL']['patch_size'], 
-            in_chans          = cfg['MODEL']['in_chans'],
-            embed_dim         = cfg['MODEL']['embed_dim'], 
-            depth             = cfg['MODEL']['depth'], 
-            num_heads         = cfg['MODEL']['n_heads'],
-            qkv_bias          = cfg['MODEL']['qkv_bias'],
-            drop_path_rate    = cfg['MODEL']['drop_path_rate'],
-            decoder_embed_dim = cfg['MODEL']['decoder_embed_dim'], 
-            decoder_depth     = cfg['MODEL']['decoder_depth'], 
-            decoder_num_heads = cfg['MODEL']['decoder_num_heads'],
-            mlp_ratio         = cfg['MODEL']['mlp_ratio'], 
-            norm_pix_loss     = cfg['MODEL']['norm_pix_loss'],
-            patch_embed_fun   = 'conv3d'
+    elif cfg.model.type in ['MaskedAutoencoderViT3D']:
+        assert cfg.model.type in _models_factory.keys(), cfg.model.type + ' not in the model factory list'
+        model = _models_factory[cfg.model.type](
+            **{key: value for key, value in cfg.model.items() if key != 'type'}
         )
+        print('MaskedAutoencoderViT3D model built with parameters ', cfg.model)
 
-        print('MAE ', cfg['MODEL']['TYPE'], ' model built.')
-
-    return model_mae
+    return model

@@ -1,5 +1,5 @@
-from __future__ import print_function, division
 
+import numpy as np
 import torch
 from timm.scheduler import CosineLRScheduler
 
@@ -50,52 +50,18 @@ def make_optimizer(cfg, args, model):
         print("weight decay: ", cfg['SOLVER']['weight_decay'])
     return optimizer
 
-def make_pretrain_optimizer(cfg, args, model):
-    """
-    Initialize an optimizer based on the configs of cfg and args
+def cosine_scheduler(base_value, final_value, epochs, niter_per_ep, warmup_epochs=0, start_warmup_value=0):
+    warmup_schedule = np.array([])
+    warmup_iters = warmup_epochs * niter_per_ep
+    if warmup_epochs > 0:
+        warmup_schedule = np.linspace(start_warmup_value, base_value, warmup_iters)
 
-    Parameters:
-    -----------
-    cfg, args: config and argument parser from the command line
-    model: torch.nn
+    iters = np.arange(epochs * niter_per_ep - warmup_iters)
+    schedule = final_value + 0.5 * (base_value - final_value) * (1 + np.cos(np.pi * iters / len(iters)))
 
-    Returns:
-    ---------
-    optimizer: torch.optim.SGD
-
-    """
-    optimizer = _optimizers_factory[cfg['SOLVER']['optimizer']](
-                                model.parameters(),
-                                lr=cfg['SOLVER']['lr'],
-                                weight_decay=cfg['SOLVER']['weight_decay'],
-                                betas=(cfg['SOLVER']['beta1'], cfg['SOLVER']['beta2'])
-                                )
-    
-    return optimizer
-
-def make_scheduler(cfg, args, optimizer):
-    """Make a scheduler
-
-    Parameters
-    ----------
-    cfg, args: config and argument parser from the command line
-    optimizer : optimizer to wrap into the scheduler
-    """
-    if cfg['SOLVER']['scheduler'] == 'cosine':        
-        lr_scheduler = CosineLRScheduler(
-            optimizer,
-            t_initial=cfg['SOLVER']['t_initial'],
-            lr_min=cfg['SOLVER']['min_lr'],
-            t_in_epochs=True,
-            cycle_decay=cfg['SOLVER']['cycle_decay'],
-            cycle_limit=cfg['SOLVER']['cycle_limit'],
-            warmup_lr_init=cfg['SOLVER']['warmup_lr'],
-            warmup_t=cfg['SOLVER']['warmup_epochs']
-        )
-    
-    return lr_scheduler
-
-import math
+    schedule = np.concatenate((warmup_schedule, schedule))
+    assert len(schedule) == epochs * niter_per_ep
+    return schedule
 
 def adjust_learning_rate(optimizer, epoch, args):
     """Decay the learning rate with half-cycle cosine after warmup"""

@@ -13,3 +13,4 @@ tqdm
 ruff
 loguru
 omegaconf
+wandb

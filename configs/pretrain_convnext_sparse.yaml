@@ -1,8 +1,11 @@
 training:
   epochs: 600
+  warmup_epochs: 40
   checkpoints: './checkpoints/'
   batch_size: 32
   num_workers: 8
+  use_fp16: False
+  saveckp_freq: 50
 
 model:
   type: 'FCMAE_3D'
@@ -21,14 +24,14 @@ model:
   encoder_type: sparse_convnextv2
   # drop_path_rate: 0.1
 
-solver:
-  optimizer: 'AdamW'
+optimizer:
+  optimizer: 'adamw'
   lr: 0.0001
   weight_decay: 0.0001
-  warmup_epochs: 40
   min_lr: 0.0000001
   beta1: 0.9
   beta2: 0.95
+  clip_grad: 3
 
 transforms:
   spacing: [1.75, 1.75, 1.75]
