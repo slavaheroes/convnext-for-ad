@@ -167,5 +167,6 @@ data
 data/*
 .ruff*
 *pdf
+keys.yaml
 
 MinkowskiEngine

@@ -63,12 +63,44 @@ if __name__ == '__main__':
     print('Process number: %d'%(os.getpid()))
     print('-----------------------------')
 
-    FILENAME_POSTFIX = args.savename + '_seed_' + str(args.seed)
-    timestamp_current = datetime.now()
-    timestamp_current = timestamp_current.strftime("%Y%m%d_%H%M")
-
-    # Monai logs foldernames
-    cfg.transforms.cache_dir_train = './monai_logs/train_' + FILENAME_POSTFIX
+    os.environ["WANDB_API_KEY"] = OmegaConf.load("keys.yaml")["WANDB_API_KEY"]
+    run = wandb.init(project="AD-NEXT", name=FILENAME, config=OmegaConf.to_container(cfg), dir=os.path.join(args.output_dir, FILENAME),
+                tags=['PT'], group=FILENAME)
+    run.log_code(".", include_fn=lambda path: path.endswith(".py") or path.endswith(".yaml"))
+    
+    # Prepare the model and data
+    model = make_pt_model(cfg, args)
+    model = model.cuda()
+    data_loader, dataset = prepare_pt_data(cfg, args)
+    logger.success(f"Data loaded: there are {len(dataset)} images.")
+    
+    # ============ init schedulers ... ============
+    lr = cfg.optimizer.lr
+    min_lr = cfg.optimizer.min_lr
+    batch_size = cfg.training.batch_size
+    warmup_epochs = cfg.training.warmup_epochs
+    weight_decay = cfg.optimizer.weight_decay
+    epochs = cfg.training.epochs
+    
+    coeff_lr_div = 256.0
+    lr_schedule = cosine_scheduler(
+        lr * batch_size / coeff_lr_div,  # linear scaling rule
+        min_lr,
+        epochs, len(data_loader),
+        warmup_epochs=warmup_epochs,
+    )    
+    if cfg.optimizer.optimizer == 'adamw':
+        optimizer = torch.optim.AdamW(
+                model.parameters(),
+                weight_decay=weight_decay,
+                betas=(cfg.optimizer.beta1, cfg.optimizer.beta2),
+            )
+    assert optimizer is not None, "No optimizer is created."
+    
+    fp16_scaler = None
+    if cfg.training.use_fp16:
+        fp16_scaler = torch.cuda.amp.GradScaler()
+    logger.success("Loss, optimizer and schedulers ready.")
     
     cfg.model.kernel_size = args.kernel_size
     cfg.model.downsampling = args.downsampling
