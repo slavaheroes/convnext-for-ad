@@ -78,6 +78,9 @@ def pretrain_model():
     print('Process number: %d'%(os.getpid()))
     print('-----------------------------')
 
+    aug_prefix = 'aug' if args.use_aug else 'noaug'
+    FILENAME = f"MAE_pt_{int(args.mask_ratio*100)}_{args.savename}_{aug_prefix}_d_{'_'.join(args.datasets)}_seed_{args.seed}"
+
     os.environ["WANDB_API_KEY"] = OmegaConf.load("keys.yaml")["WANDB_API_KEY"]
     run = wandb.init(project="AD-NEXT", name=FILENAME, config=OmegaConf.to_container(cfg), dir=os.path.join(args.output_dir, FILENAME),
                 tags=['PT'], group=FILENAME)
@@ -116,10 +119,7 @@ def pretrain_model():
     if cfg.training.use_fp16:
         fp16_scaler = torch.cuda.amp.GradScaler()
     logger.success("Loss, optimizer and schedulers ready.")
-    
-    aug_prefix = 'aug' if args.use_aug else 'noaug'
-    FILENAME = f"MAE_pt_{int(args.mask_ratio*100)}_{args.savename}_{aug_prefix}_d_{'_'.join(args.datasets)}_seed_{args.seed}"
-    
+        
     ### LOG CHORES ###
     cfg.transforms.cache_dir_train = f'./monai_cache/pretrain_{FILENAME}'
     os.makedirs(os.path.join(args.output_dir, FILENAME), exist_ok=True)
