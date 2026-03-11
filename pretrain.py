@@ -9,7 +9,7 @@ import numpy as np
 
 import os
 import time
-from datetime import datetime
+import datetime
 import argparse
 import random
 from omegaconf import OmegaConf

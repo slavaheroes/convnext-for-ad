@@ -5,17 +5,13 @@ Created on Wed Feb 8 2023
 @author: qasymjomart
 """
 
-import pandas as pd
 from sklearn.model_selection import train_test_split
-
-import monai
-from monai import data
-from monai import transforms
-
 import glob
 import os
+import pandas as pd
 from natsort import natsorted
-from monai.data.utils import worker_init_fn
+import monai
+from monai import data
 
 def replace_data_path(datapath):
     servername = os.uname()[1]
@@ -32,102 +28,120 @@ def replace_data_path(datapath):
         print(f'Path configuration for {servername} server not found. Using original path.')
     return datapath
 
-def prepare_pt_data(cfg, args):
-    """Build datalaoders for pretraining
+def make_aibl_test_dataloader(cfg, args, verbose=True):
+    
+    classes_to_use = []
+    if 'CN' in args.classes_to_use:
+        classes_to_use.append(1)
+    if 'AD' in args.classes_to_use:
+        classes_to_use.append(3)
+    
+    dataset = 'AIBL'
+    test_transforms = monai.transforms.Compose([
+        monai.transforms.LoadImaged(keys=["image"]),
+        monai.transforms.EnsureChannelFirstd(keys=["image",]),
+        monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
+        monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+        monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
+        monai.transforms.CropForegroundd(keys=["image"], source_key="image"),
+        monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
+        monai.transforms.ToTensord(keys=["image", "label"])
+    ])
+    # test_transforms.set_random_state(args.seed)
 
-    Args:
-        cfg : config (read from yaml)
-        args : argument parser from command line
+    nii_list = natsorted(glob.glob(replace_data_path(cfg[dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz'))
+    if verbose:
+        print(f'{len(nii_list)} nii files found.')
     
-    Returns:
-    ------------
-    pretraining_dataloader : type (torch.utils.data.DataLoader)
+    test_datalist = []
 
-    """
-    dataset_list = []
-    datapath_list = []
-    
- 
-    if "IXI" in args.datasets:
-        datapath_list = datapath_list + glob.glob(cfg['IXI']['dataroot'])
-        print('Used IXI')
-    
-    if "HCP" in args.datasets:
-        datapath_list = datapath_list + glob.glob(cfg['HCP']['dataroot'])
-        print('Used HCP')
-    
-    if "ADNI1" in args.datasets:
-        datapath_list = datapath_list + glob.glob(cfg['ADNI1']['dataroot'])
-        print('Used ADNI1')
-    
-    if "ADNI2" in args.datasets:
-        datapath_list = datapath_list + glob.glob(cfg['ADNI2']['dataroot'])
-        print('Used ADNI2')
-    
-    if "OASIS3" in args.datasets: # have to include code for sorting out healthy subjects
-        datapath_temp_list = glob.glob(replace_data_path(cfg["OASIS3"]["dataroot"]))
-        # Step 1: Read the cfg["OASIS3"]["labelsroot"] file into a DataFrame and select the "filename" column
-        df_healthy_oasis3 = pd.read_csv(replace_data_path(cfg["OASIS3"]["labelsroot"]))
-        filenames = df_healthy_oasis3['filename'].tolist()
-        # Step 2: Remove the .json ending from each entry in the list, replace it with .nii.gz, and add 'hdbet_' as a prefix
-        filenames = ['hdbet_' + filename.replace('.json', '.nii.gz') for filename in filenames]
-        # Step 3: Select the subset of datapath_list where the filename matches with the entries of the earlier created list
-        datapath_list = datapath_list + [path for path in datapath_temp_list if os.path.basename(path) in filenames]
-        print('Used OASIS3')
+    test_df = pd.read_csv(replace_data_path(cfg[dataset]['labelsroot']))
+    test_df = test_df[test_df['DXCURREN'].isin(classes_to_use)]
+    for _, row in test_df.iterrows():
+        label = classes_to_use.index(row["DXCURREN"])
+        path_to_file = [x for x in nii_list if f"_{row['RID']}_" in x and 'ADNI_confirmed' in x]
+        assert len(path_to_file) == 1, f"Expected one file for RID {row['RID']}, found {len(path_to_file)}"
 
-    datapath_list = natsorted(datapath_list)
-    dataset_list = [{"image": x} for x in datapath_list]
+        test_datalist.append({
+            "image": path_to_file[0],
+            "label": label
+        })
+
+    test_dataset = data.PersistentDataset(data=test_datalist, 
+                                          transform=test_transforms, 
+                                          cache_dir=cfg['transforms']['cache_dir_test'])
     
-    if args.use_aug:
-        print('Using data augmentations')
-        train_transforms = monai.transforms.Compose([
-            monai.transforms.LoadImaged(keys=["image"]),
-            monai.transforms.EnsureChannelFirstd(keys=["image",]),
-            monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
-            monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
-            monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
-            monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
-            monai.transforms.RandSpatialCropd(keys=["image"], roi_size=(80,80,80), max_roi_size=tuple(cfg.transforms.resize)),
-            monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
-            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
-            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
-            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
-            monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
-            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
-            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
-            monai.transforms.ToTensord(keys=["image"])
-            ])
-    else:
-        print('No data augmentations used')
-        train_transforms = monai.transforms.Compose([
-            monai.transforms.LoadImaged(keys=["image"]),
-            monai.transforms.EnsureChannelFirstd(keys=["image",]),
-            monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
-            monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
-            monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
-            monai.transforms.CropForegroundd(keys=["image"], source_key="image", allow_smaller=True), 
-            monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
-            monai.transforms.ToTensord(keys=["image"])
-        ])
-        
-    
-    # train_transforms.set_random_state(args.seed)
-    dataset = data.PersistentDataset(data=dataset_list, transform=train_transforms, cache_dir=cfg.transforms.cache_dir_train)
-    
-    data_loader = data.DataLoader(dataset, 
-                                    batch_size=cfg.training.batch_size,
-                                    shuffle=True, 
-                                    num_workers=cfg.training.num_workers,
-                                    pin_memory=True,
-                                    persistent_workers=True if cfg.training.num_workers > 0 else False,
+    test_dataloader = data.DataLoader(test_dataset, 
+                                    batch_size=4,
+                                    shuffle=False, 
+                                    num_workers=0
                                     )
+
+    ratios_test = {}
+    for label in classes_to_use:
+        label_id = classes_to_use.index(label)
+        ratios_test[label] = sum([1 for x in test_datalist if x['label'] == label_id])
     
-    return data_loader, dataset
+    print(f'{dataset} test dataset and dataloader built. Len: {len(test_dataset)}')
+    
+    return test_dataloader, test_dataset, ratios_test
 
 
+def make_adni2_test_dataloader(cfg, args, verbose=True):
+    dataset = 'ADNI2'
+    test_transforms = monai.transforms.Compose([
+        monai.transforms.LoadImaged(keys=["image"]),
+        monai.transforms.EnsureChannelFirstd(keys=["image",]),
+        monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
+        monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+        monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
+        monai.transforms.CropForegroundd(keys=["image"], source_key="image"),
+        monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
+        monai.transforms.ToTensord(keys=["image", "label"])
+    ])
+    # test_transforms.set_random_state(args.seed)
+
+    nii_list = natsorted(glob.glob(replace_data_path(cfg[dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz'))
+    if verbose:
+        print(f'{len(nii_list)} nii files found.')
+    
+    test_datalist = []
+
+    test_df = pd.read_csv(replace_data_path(cfg[dataset]['labelsroot']))
+    test_df = test_df[test_df['Group'].isin(args.classes_to_use)]
+    for _, row in test_df.iterrows():
+        label = args.classes_to_use.index(row["Group"])
+        path_to_file = [x for x in nii_list if row['Subject'] in x and row['Image Data ID'] in x]
+        assert len(path_to_file) == 1, f'More than one file found for {row["Subject"]} and {row["Image Data ID"]}. Length: {len(path_to_file)}'
+
+        test_datalist.append({
+            "image": path_to_file[0],
+            "label": label
+        })
+
+    test_dataset = data.PersistentDataset(data=test_datalist, 
+                                          transform=test_transforms, 
+                                          cache_dir=cfg['transforms']['cache_dir_test'])
+    
+    test_dataloader = data.DataLoader(test_dataset, 
+                                    batch_size=4,
+                                    shuffle=False, 
+                                    num_workers=0
+                                    )
+
+    ratios_test = {}
+    for label in args.classes_to_use:
+        label_id = args.classes_to_use.index(label)
+        ratios_test[label] = sum([1 for x in test_datalist if x['label'] == label_id])
+    
+    print(f'{dataset} test dataset and dataloader built. Len: {len(test_dataset)}')
+    
+    return test_dataloader, test_dataset, ratios_test
+    
 def make_kfold_dataloaders(cfg, args, train_df, test_df, verbose=True):
 
     if args.use_aug:
+        # old augmentation
         train_transforms = monai.transforms.Compose([
             monai.transforms.LoadImaged(keys=["image"]),
             monai.transforms.EnsureChannelFirstd(keys=["image"]),
@@ -135,15 +149,42 @@ def make_kfold_dataloaders(cfg, args, train_df, test_df, verbose=True):
             monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
             monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
             monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
+            # monai.transforms.NormalizeIntensityd(keys=["image"], nonzero=cfg["TRANSFORMS"]["normalize_non_zero"]),
             monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
             monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
-            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
-            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
+            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2), # must be disabled
+            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2), # must be disabled
+            # monai.transforms.RandGaussianNoised(keys=["image"], prob=0.2, mean=0.0, std=0.1), # must be disabled
             monai.transforms.ToTensord(keys=["image", "label"])
         ])
+        
+        # train_transforms = monai.transforms.Compose([
+        #     monai.transforms.LoadImaged(keys=["image"]),
+        #     monai.transforms.EnsureChannelFirstd(keys=["image"]),
+        #     monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
+        #     monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+        #     monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
+        #     monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
+        #     monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
+        #     # spatial
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.3, spatial_axis=0),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.3, spatial_axis=1),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.3, spatial_axis=2),
+        #     monai.transforms.RandRotated(keys=["image"], prob=0.3, range_x=0.25, range_y=0.25, range_z=0.25),
+        #     monai.transforms.RandZoomd(keys=["image"], prob=0.3, min_zoom=0.75, max_zoom=1.25, mode="bilinear"),
+        #     # contrast
+        #     monai.transforms.RandGaussianNoised(keys=["image"], mean=0.0, std=0.08, prob=0.2),
+        #     monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2), # must be disabled
+        #     monai.transforms.RandBiasFieldd(keys=["image"], degree=2, coeff_range=(0.0, 0.1), prob=0.2),
+        #     monai.transforms.RandAdjustContrastd(keys=["image"], gamma=(0.5, 4.5), invert_image=False, retain_stats=False, prob=0.2),
+        #     monai.transforms.RandGaussianSharpend(keys=["image"], prob=0.2),
+        #     monai.transforms.ToTensord(keys=["image", "label"])
+        # ])
+            
+        
     else:
         train_transforms = monai.transforms.Compose([
             monai.transforms.LoadImaged(keys=["image"]),
@@ -166,7 +207,10 @@ def make_kfold_dataloaders(cfg, args, train_df, test_df, verbose=True):
         monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
         monai.transforms.ToTensord(keys=["image", "label"])
     ])
-        
+    
+    # train_transforms.set_random_state(args.seed)
+    # test_transforms.set_random_state(args.seed)
+    
     nii_list = natsorted(glob.glob(replace_data_path(cfg[args.dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz'))
     if verbose:
         print(f'{len(nii_list)} nii files found.')

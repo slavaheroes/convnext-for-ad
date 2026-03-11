@@ -12,18 +12,12 @@ https://github.com/CDTrans/CDTrans
 """
 
 import math
-import copy
-from functools import partial
-from itertools import repeat
 import numpy as np
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-import torchvision
-
-from utils.weight_init import trunc_normal_, init_weights_vit_timm, get_init_weights_vit, named_apply
+from utils.weight_init import trunc_normal_, get_init_weights_vit, named_apply
 from utils.utils import get_3d_sincos_pos_embed
 
 def drop_path(x, drop_prob: float = 0., training: bool = False):
@@ -82,14 +76,13 @@ class PatchEmbed3D(nn.Module):
         # sample random tensor to calculate the output shape
         sample_torch = torch.rand((1, 1, *self.img_size)) # --> e.g. (1,1,128,128,128)
 
-        if patch_embed_fun == 'conv3d':
-            self.proj = nn.Conv3d(
-                in_channels=1,
-                out_channels=embed_dim,
-                kernel_size=patch_size,
-                stride=patch_size
-            )
-        
+        self.proj = nn.Conv3d(
+            in_channels=1,
+            out_channels=embed_dim,
+            kernel_size=patch_size,
+            stride=patch_size
+        )
+                
         out = self.proj(sample_torch)
         self.n_patches = out.flatten(2).shape[2]
 
@@ -142,7 +135,7 @@ class Attention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_p)
     
-    def forward(self, x):
+    def forward(self, x, return_attn=False):
         """
         Input
         ------
@@ -182,6 +175,9 @@ class Attention(nn.Module):
         weighted_avg = weighted_avg.flatten(2) # (n_samples, n_patches + 1, dim)
         x = self.proj(weighted_avg)
         x = self.proj_drop(x)
+        
+        if return_attn:
+            return x, attn
 
         return x
 
@@ -269,7 +265,7 @@ class Block(nn.Module):
 
         self.drop_path = DropPath(drop_prob=drop_path) if drop_path > 0. else nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x, return_attn=False):
         """
         Input
         ------
@@ -279,9 +275,21 @@ class Block(nn.Module):
         ---------
         Shape (n_samples, n_patches + 1, dim)
         """
-        x = x + self.drop_path(self.attn(self.norm1(x)))
+        x0 = x
+        x = self.norm1(x)
+        if return_attn:
+            x, attn_ = self.attn(x, return_attn=True)
+        else:
+            x = self.attn(x, return_attn=False)
+        
+        x = x0 + self.drop_path(x) # (n_samples, n_patches + 1, dim)
         x = x + self.drop_path(self.mlp(self.norm2(x)))
+        
+        # x = x + self.drop_path(self.attn(self.norm1(x)))
+        # x = x + self.drop_path(self.mlp(self.norm2(x)))
 
+        if return_attn:
+            return x, attn_
         return x
 
 
@@ -324,23 +332,21 @@ class Vision_Transformer3D(nn.Module):
                 drop_path_rate=0.,
                 p=0., 
                 attn_p=0.,
-                patch_embed_fun='conv3d',
                 weight_init='',
                 global_avg_pool=False,
                 pos_embed_type='learnable',
-                use_separation=True
+                use_separation=True,
+                **kwargs
                 ):
         super().__init__()
 
-        if patch_embed_fun in ['conv3d']:
-            self.patch_embed = PatchEmbed3D(
-                img_size=img_size,
-                patch_size=patch_size,
-                embed_dim=embed_dim,
-                patch_embed_fun=patch_embed_fun
-            )
-            
-        self.cls_token = nn.Parameter(torch.rand(1, 1, embed_dim)) if global_avg_pool == False else None
+        self.patch_embed = PatchEmbed3D(
+            img_size=img_size,
+            patch_size=patch_size,
+            embed_dim=embed_dim,
+        )
+
+        self.cls_token = nn.Parameter(torch.rand(1, 1, embed_dim)) if not global_avg_pool else None
         embed_len = self.patch_embed.n_patches if global_avg_pool else 1 + self.patch_embed.n_patches
         self.pos_embed = nn.Parameter(
                 torch.rand(1, embed_len, embed_dim), requires_grad=True
@@ -376,10 +382,6 @@ class Vision_Transformer3D(nn.Module):
         self.head = nn.Linear(embed_dim, n_classes)
 
         trunc_normal_(self.cls_token, std=.02)
-        # trunc_normal_(self.pos_embed, std=.02)
-
-        # self.apply(self._init_weights_vit_timm)
-
         self.init_weights(weight_init)
     
     def init_weights(self, mode=''):
@@ -403,7 +405,7 @@ class Vision_Transformer3D(nn.Module):
     def get_classifier(self):
         return self.head
 
-    def forward(self, x):
+    def forward(self, x, return_attn=False, return_cls_token=False):
         """
         Input
         -----
@@ -416,6 +418,7 @@ class Vision_Transformer3D(nn.Module):
         """
         n_samples = x.shape[0]
         x = self.patch_embed(x)
+        attn_arr = []
 
         if self.cls_token is not None:
             cls_token = self.cls_token.expand(
@@ -426,7 +429,11 @@ class Vision_Transformer3D(nn.Module):
         x = self.pos_drop(x)
 
         for block in self.blocks:
-            x = block(x)
+            if return_attn:
+                x, attn = block(x, return_attn=True)
+                attn_arr.append(attn)
+            else:
+                x = block(x, return_attn=False)
         
         x = self.norm(x)
 
@@ -434,7 +441,12 @@ class Vision_Transformer3D(nn.Module):
         cls_token_final = x[:, 0] if self.cls_token is not None else x.mean(dim=1)
         # cls_token_final = self.bottleneck(cls_token_final)
         x = self.head(cls_token_final)
-
+        if return_cls_token:
+            return x, cls_token_final
+        
+        if return_attn:
+            attn_arr = torch.stack(attn_arr, dim=1)
+            return x, attn_arr
         return x
     
     def save(self, optimizer, scaler, checkpoint):
