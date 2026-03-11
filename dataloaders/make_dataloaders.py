@@ -28,6 +28,98 @@ def replace_data_path(datapath):
         print(f'Path configuration for {servername} server not found. Using original path.')
     return datapath
 
+def prepare_pt_data(cfg, args):
+    """Build datalaoders for pretraining
+
+    Args:
+        cfg : config (read from yaml)
+        args : argument parser from command line
+    
+    Returns:
+    ------------
+    pretraining_dataloader : type (torch.utils.data.DataLoader)
+
+    """
+    dataset_list = []
+    datapath_list = []
+    
+ 
+    if "IXI" in args.datasets:
+        datapath_list = datapath_list + glob.glob(cfg['IXI']['dataroot'])
+        print('Used IXI')
+    
+    if "HCP" in args.datasets:
+        datapath_list = datapath_list + glob.glob(cfg['HCP']['dataroot'])
+        print('Used HCP')
+    
+    if "ADNI1" in args.datasets:
+        datapath_list = datapath_list + glob.glob(cfg['ADNI1']['dataroot'])
+        print('Used ADNI1')
+    
+    if "ADNI2" in args.datasets:
+        datapath_list = datapath_list + glob.glob(cfg['ADNI2']['dataroot'])
+        print('Used ADNI2')
+    
+    if "OASIS3" in args.datasets: # have to include code for sorting out healthy subjects
+        datapath_temp_list = glob.glob(replace_data_path(cfg["OASIS3"]["dataroot"]))
+        # Step 1: Read the cfg["OASIS3"]["labelsroot"] file into a DataFrame and select the "filename" column
+        df_healthy_oasis3 = pd.read_csv(replace_data_path(cfg["OASIS3"]["labelsroot"]))
+        filenames = df_healthy_oasis3['filename'].tolist()
+        # Step 2: Remove the .json ending from each entry in the list, replace it with .nii.gz, and add 'hdbet_' as a prefix
+        filenames = ['hdbet_' + filename.replace('.json', '.nii.gz') for filename in filenames]
+        # Step 3: Select the subset of datapath_list where the filename matches with the entries of the earlier created list
+        datapath_list = datapath_list + [path for path in datapath_temp_list if os.path.basename(path) in filenames]
+        print('Used OASIS3')
+
+    datapath_list = natsorted(datapath_list)
+    dataset_list = [{"image": x} for x in datapath_list]
+    
+    if args.use_aug:
+        print('Using data augmentations')
+        train_transforms = monai.transforms.Compose([
+            monai.transforms.LoadImaged(keys=["image"]),
+            monai.transforms.EnsureChannelFirstd(keys=["image",]),
+            monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
+            monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+            monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
+            monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
+            monai.transforms.RandSpatialCropd(keys=["image"], roi_size=(80,80,80), max_roi_size=tuple(cfg.transforms.resize)),
+            monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
+            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
+            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
+            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
+            monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
+            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
+            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
+            monai.transforms.ToTensord(keys=["image"])
+            ])
+    else:
+        print('No data augmentations used')
+        train_transforms = monai.transforms.Compose([
+            monai.transforms.LoadImaged(keys=["image"]),
+            monai.transforms.EnsureChannelFirstd(keys=["image",]),
+            monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
+            monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+            monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
+            monai.transforms.CropForegroundd(keys=["image"], source_key="image", allow_smaller=True), 
+            monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
+            monai.transforms.ToTensord(keys=["image"])
+        ])
+        
+    
+    # train_transforms.set_random_state(args.seed)
+    dataset = data.PersistentDataset(data=dataset_list, transform=train_transforms, cache_dir=cfg.transforms.cache_dir_train)
+    
+    data_loader = data.DataLoader(dataset, 
+                                    batch_size=cfg.training.batch_size,
+                                    shuffle=True, 
+                                    num_workers=cfg.training.num_workers,
+                                    pin_memory=True,
+                                    persistent_workers=True if cfg.training.num_workers > 0 else False,
+                                    )
+    
+    return data_loader, dataset
+
 def make_aibl_test_dataloader(cfg, args, verbose=True):
     
     classes_to_use = []
