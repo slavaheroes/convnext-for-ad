@@ -14,6 +14,10 @@ model:
   qkv_bias: True
   drop_path_rate: 0.1
   p: 0.
+  embed_dim: 768
+  depth: 12
+  n_heads: 12
+  mlp_ratio: 4.0
   attn_p: 0.1
   global_avg_pool: False
   pos_embed_type: 'learnable'

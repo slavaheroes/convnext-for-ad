@@ -31,93 +31,93 @@ def make_vanilla_model(cfg, args):
     Make models for vanilla classifcation training
 
     """
-    if cfg.model.type in ['ViT3D']:
-        assert cfg.model.type in _models_factory.keys(), cfg.model.type + ' not in the model factory list'
+    if cfg.model.arch in ['ViT3D']:
+        assert cfg.model.arch in _models_factory.keys(), cfg.model.arch + ' not in the model factory list'
 
-        model = _models_factory[cfg.model.type](
-            img_size        = cfg['MODEL']['img_size'],
-            patch_size      = cfg['MODEL']['patch_size'],
-            in_chans        = cfg['MODEL']['in_chans'],
-            n_classes       = cfg['MODEL']['n_classes'],
-            embed_dim       = cfg['MODEL']['embed_dim'],
-            depth           = cfg['MODEL']['depth'],
-            n_heads         = cfg['MODEL']['n_heads'],
-            mlp_ratio       = cfg['MODEL']['mlp_ratio'],
-            qkv_bias        = cfg['MODEL']['qkv_bias'],
-            drop_path_rate  = cfg['MODEL']['drop_path_rate'],
-            p               = cfg['MODEL']['p'],
-            attn_p          = cfg['MODEL']['attn_p'],
-            global_avg_pool = cfg['MODEL']['global_avg_pool'],
-            patch_embed_fun = cfg['MODEL']['patch_embed_fun'],
-            pos_embed_type  = cfg['MODEL']['pos_embed_type']
+        model = _models_factory[cfg.model.arch](
+            img_size        = cfg['model']['img_size'],
+            patch_size      = cfg['model']['patch_size'],
+            in_chans        = cfg['model']['in_chans'],
+            n_classes       = cfg['model']['n_classes'],
+            embed_dim       = cfg['model']['embed_dim'],
+            depth           = cfg['model']['depth'],
+            n_heads         = cfg['model']['n_heads'],
+            mlp_ratio       = cfg['model']['mlp_ratio'],
+            qkv_bias        = cfg['model']['qkv_bias'],
+            drop_path_rate  = cfg['model']['drop_path_rate'],
+            p               = cfg['model']['p'],
+            attn_p          = cfg['model']['attn_p'],
+            global_avg_pool = cfg['model']['global_avg_pool'],
+            patch_embed_fun = cfg['model']['patch_embed_fun'],
+            pos_embed_type  = cfg['model']['pos_embed_type']
         )
         
         print('ViT3D model built with parameters ')
-        print('patch_size: ', cfg['MODEL']['patch_size'])
-        print('embed_dim: ', cfg['MODEL']['embed_dim'])
-        print('depth: ', cfg['MODEL']['depth'])
-        print('n_heads: ', cfg['MODEL']['n_heads'])
-        print('mlp_ratio: ', cfg['MODEL']['mlp_ratio'])
+        print('patch_size: ', cfg['model']['patch_size'])
+        print('embed_dim: ', cfg['model']['embed_dim'])
+        print('depth: ', cfg['model']['depth'])
+        print('n_heads: ', cfg['model']['n_heads'])
+        print('mlp_ratio: ', cfg['model']['mlp_ratio'])
         
         
         
-    elif cfg.model.type in ['DenseNet121', 'ResNet10', 'ResNet18', 'ResNet34', 'ResNet101', 'ResNet152']:
-        assert cfg.model.type in _models_factory.keys(), cfg.model.type + '_' + ' not in the model factory list'
+    elif cfg.model.arch in ['DenseNet121', 'ResNet10', 'ResNet18', 'ResNet34', 'ResNet101', 'ResNet152']:
+        assert cfg.model.arch in _models_factory.keys(), cfg.model.arch + '_' + ' not in the model factory list'
 
-        model = _models_factory[cfg.model.type](
+        model = _models_factory[cfg.model.arch](
             spatial_dims     = 3,
             n_input_channels = 1,
-            num_classes      = cfg['MODEL']['n_classes']
+            num_classes      = cfg['model']['n_classes']
         )
         
-        print(f'Traditional Convolution {cfg["MODEL"]["TYPE"]} model built.')
+        print(f'Traditional Convolution {cfg["model"]["arch"]} model built.')
     
-    elif cfg.model.type in ['ConvNeXtV2_3D']:
-        assert cfg.model.type in _models_factory.keys(), cfg.model.type + ' not in the model factory list'
+    elif cfg.model.arch in ['ConvNeXtV2_3D']:
+        assert cfg.model.arch in _models_factory.keys(), cfg.model.arch + ' not in the model factory list'
         
-        if args.size in ['small']:
-            cfg['MODEL']['depths'] = [3, 3, 9, 3]
-            cfg['MODEL']['dims'] = [32, 64, 128, 256]
-        elif args.size in ['base']:
-            cfg['MODEL']['depths'] = [3, 3, 27, 3]
-            cfg['MODEL']['dims'] = [64, 128, 256, 512]
-        elif args.size in ['large']:
-            cfg['MODEL']['depths'] = [3, 3, 27, 3]
-            cfg['MODEL']['dims'] = [128, 256, 512, 512]
-        elif args.size in ['tiny']:
-            cfg['MODEL']['depths'] = [2, 2, 6, 2]
-            cfg['MODEL']['dims'] = [16, 32, 64, 128]
+        if args.model_size in ['small']:
+            cfg['model']['depths'] = [3, 3, 9, 3]
+            cfg['model']['dims'] = [32, 64, 128, 256]
+        elif args.model_size in ['base']:
+            cfg['model']['depths'] = [3, 3, 27, 3]
+            cfg['model']['dims'] = [64, 128, 256, 512]
+        elif args.model_size in ['large']:
+            cfg['model']['depths'] = [3, 3, 27, 3]
+            cfg['model']['dims'] = [128, 256, 512, 512]
+        elif args.model_size in ['tiny']:
+            cfg['model']['depths'] = [2, 2, 6, 2]
+            cfg['model']['dims'] = [16, 32, 64, 128]
 
-        model = _models_factory[cfg.model.type](
-            in_chans        = cfg['MODEL']['in_chans'],
-            num_classes     = cfg['MODEL']['n_classes'],
-            drop_path_rate  = cfg['MODEL']['drop_path_rate'],
-            depths          = cfg['MODEL']['depths'],
-            dims           = cfg['MODEL']['dims'],
-            kernel_size    = cfg['MODEL']['kernel_size'],
-            padding        = cfg['MODEL']['kernel_size']//2,
-            downsampling   = cfg['MODEL']['downsampling']
+        model = _models_factory[cfg.model.arch](
+            in_chans        = cfg['model']['in_chans'],
+            num_classes     = cfg['model']['n_classes'],
+            drop_path_rate  = cfg['model']['drop_path_rate'],
+            depths          = cfg['model']['depths'],
+            dims           = cfg['model']['dims'],
+            kernel_size    = cfg['model']['kernel_size'],
+            padding        = cfg['model']['kernel_size']//2,
+            downsampling   = cfg['model']['downsampling']
         )
         
-        print(f'ConvNeXtV2_3D model built with kernel_size={cfg["MODEL"]["kernel_size"]},\
-            padding={cfg["MODEL"]["padding"]}, downsampling={cfg["MODEL"]["downsampling"]}')
+        print(f'ConvNeXtV2_3D model built with kernel_size={cfg["model"]["kernel_size"]},\
+            padding={cfg["model"]["padding"]}, downsampling={cfg["model"]["downsampling"]}')
         
-        print(f'Depths: {cfg["MODEL"]["depths"]}, Dims: {cfg["MODEL"]["dims"]}')
-        print(f'Drop path rate: {cfg["MODEL"]["drop_path_rate"]}')
+        print(f'Depths: {cfg["model"]["depths"]}, Dims: {cfg["model"]["dims"]}')
+        print(f'Drop path rate: {cfg["model"]["drop_path_rate"]}')
         
-    elif cfg.model.type in ['MedNeXt', 'MedNext']:
+    elif cfg.model.arch in ['MedNeXt', 'MedNext']:
         model = MedNeXtEncoderOnly(
-            in_channels=cfg['MODEL']['in_chans'],
-            n_classes=cfg['MODEL']['n_classes'],
-            n_channels=cfg['MODEL']['n_channels'],
-            exp_r=cfg['MODEL']['exp_r'],
-            kernel_size=cfg['MODEL']['kernel_size'],
-            deep_supervision=cfg['MODEL']['deep_supervision'],
-            do_res=cfg['MODEL']['do_res'],
-            do_res_up_down=cfg['MODEL']['do_res_up_down'],
-            block_counts=cfg['MODEL']['block_counts'],
+            in_channels=cfg['model']['in_chans'],
+            n_classes=cfg['model']['n_classes'],
+            n_channels=cfg['model']['n_channels'],
+            exp_r=cfg['model']['exp_r'],
+            kernel_size=cfg['model']['kernel_size'],
+            deep_supervision=cfg['model']['deep_supervision'],
+            do_res=cfg['model']['do_res'],
+            do_res_up_down=cfg['model']['do_res_up_down'],
+            block_counts=cfg['model']['block_counts'],
         )
-        print('kernel_size: ', cfg['MODEL']['kernel_size'])
+        print('kernel_size: ', cfg['model']['kernel_size'])
         print('MedNeXt for Classification model built.')
 
     return model
@@ -126,9 +126,9 @@ def make_pt_model(cfg, args):
     """Build a 3D MAE
     to be used for pre-training
     """
-    if cfg.model.type in ['FCMAE_3D']:
-        assert cfg.model.type  in _models_factory.keys(), \
-            f"{cfg.model.type} not in the model factory list"
+    if cfg.model.arch in ['FCMAE_3D']:
+        assert cfg.model.arch  in _models_factory.keys(), \
+            f"{cfg.model.arch} not in the model factory list"
         
         if args.size in ['small']:
             cfg.model.depths = [3, 3, 9, 3]
@@ -143,17 +143,17 @@ def make_pt_model(cfg, args):
             cfg.model.depths = [2, 2, 6, 2]
             cfg.model.dims = [16, 32, 64, 128]
         
-        model = _models_factory[cfg.model.type](
-            # remove 'type' key and pass all unpacking
-            **{key: value for key, value in cfg.model.items() if key != 'type'}
+        model = _models_factory[cfg.model.arch](
+            # remove 'arch' key and pass all unpacking
+            **{key: value for key, value in cfg.model.items() if key != 'arch'}
         )
         
         print('FCMAE_3D model built with parameters ', cfg.model)
     
-    elif cfg.model.type in ['MaskedAutoencoderViT3D']:
-        assert cfg.model.type in _models_factory.keys(), cfg.model.type + ' not in the model factory list'
-        model = _models_factory[cfg.model.type](
-            **{key: value for key, value in cfg.model.items() if key != 'type'}
+    elif cfg.model.arch in ['MaskedAutoencoderViT3D']:
+        assert cfg.model.arch in _models_factory.keys(), cfg.model.arch + ' not in the model factory list'
+        model = _models_factory[cfg.model.arch](
+            **{key: value for key, value in cfg.model.items() if key != 'arch'}
         )
         print('MaskedAutoencoderViT3D model built with parameters ', cfg.model)
 

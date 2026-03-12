@@ -16,6 +16,7 @@ from sklearn.base import TransformerMixin
 from sklearn.preprocessing import MinMaxScaler
 from collections import OrderedDict
 
+from loguru import logger
 
 import timm
 
@@ -308,19 +309,19 @@ def load_pretrained_checkpoint(model, pre_trained_model_path, checkpoint_type=No
         path to the pre-trained models checkpoint
     """
     if 'ConvNext_sparse' in checkpoint_type:
-        print("Loading ConvNext_sparse pre-trained model")
+        logger.critical("Loading ConvNext_sparse pre-trained model")
         checkpoint = torch.load(pre_trained_model_path, map_location='cpu')
-        print("Loaded pre-trained checkpoint from: %s" % pre_trained_model_path)
+        logger.critical("Loaded pre-trained checkpoint from: %s" % pre_trained_model_path)
         checkpoint_model = checkpoint['net']
         state_dict = remap_checkpoint_keys(checkpoint_model)
         msg = model.load_state_dict(state_dict, strict=False)
-        print(msg)
+        logger.critical(msg)
         return model
         
     elif 'ConvNext' in checkpoint_type:
-        print("Loading ConvNext pre-trained model")
+        logger.critical("Loading ConvNext pre-trained model")
         checkpoint = torch.load(pre_trained_model_path, map_location='cpu')
-        print("Loaded pre-trained checkpoint from: %s" % pre_trained_model_path)
+        logger.critical("Loaded pre-trained checkpoint from: %s" % pre_trained_model_path)
         checkpoint_model = checkpoint['net']
         from collections import OrderedDict
         state_dict = OrderedDict()
@@ -330,12 +331,12 @@ def load_pretrained_checkpoint(model, pre_trained_model_path, checkpoint_type=No
                 state_dict[k.replace('encoder.', '')] = v
         
         missing_keys = model.load_state_dict(state_dict, strict=True)
-        print(missing_keys)
+        logger.critical(missing_keys)
         return model
     else:
         # ViT checkpoint
         checkpoint = torch.load(pre_trained_model_path, map_location='cpu')
-        print("Loaded pre-trained checkpoint from: %s" % pre_trained_model_path)
+        logger.critical("Loaded pre-trained checkpoint from: %s" % pre_trained_model_path)
         checkpoint_model = checkpoint['net']
         keys_to_remove = ['head.weight', 'head.bias', 'pos_embed', 'patch_embed.proj.weight', 'patch_embed.proj.bias']
 
@@ -343,12 +344,12 @@ def load_pretrained_checkpoint(model, pre_trained_model_path, checkpoint_type=No
         
     for k in keys_to_remove:
         if k in checkpoint_model and k in state_dict and checkpoint_model[k].shape != state_dict[k].shape:
-            print(f"Removing key {k} from pretrained checkpoint")
+            logger.critical(f"Removing key {k} from pretrained checkpoint")
             del checkpoint_model[k]
     
     msg = model.load_state_dict(checkpoint_model, strict=False)
 
-    print(msg.missing_keys)
+    logger.critical(msg.missing_keys)
     
 
     return model

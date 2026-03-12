@@ -15,6 +15,8 @@ from loguru import logger
 from tqdm import tqdm
 import random
 import yaml
+from omegaconf import OmegaConf
+
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.class_weight import compute_class_weight
 
@@ -29,7 +31,7 @@ from lightning.pytorch.loggers import WandbLogger
 
 from lits import LitViT
 from dataloaders.make_dataloaders import make_kfold_dataloaders, replace_data_path
-from models.make_models import make_model
+from models.make_models import make_vanilla_model
 from utils.prepare_model import prepare_model_for_training
 from test_fn import test_adni2, test_aibl
 
@@ -55,7 +57,7 @@ def set_seed(seed):
 def train():
     # Parse some variable configs
     parser = argparse.ArgumentParser(description='Train AD ViT model for MRI imaging for classification of AD')
-    parser.add_argument('--config_file', type=str, default='configs/config_vitb.yaml', help='Name of the config file')
+    parser.add_argument('--config_file', type=str, default='configs/vitb_mae.yaml', help='Name of the config file')
     parser.add_argument('--savename', type=str, help='Experiment name (used for saving files)')
     parser.add_argument('--classes_to_use', nargs='+', type=str, help='Classes to use (enter by separating by space, e.g. CN AD MCI)')
     parser.add_argument('--dataset', type=str, help='Dataset')
@@ -73,7 +75,7 @@ def train():
     parser.add_argument('--scheduler', type=str, default='cosine', help='Learning rate scheduler')
     parser.add_argument('--train_size', type=str, default='all', help='Train size: [0.2, 0.4, 0.6, 0.8, all]')
     parser.add_argument('--batch_size', type=int, default=4, help='Batch size')
-    parser.add_argument('--vit_size', type=str, default='base', help='ViT base, small, large')
+    parser.add_argument('--model_size', type=str, default='base', help='ViT base, small, large')
     parser.add_argument('--disable_qkv_bias', action='store_true', help='If set, will not use qkv bias in ViT model')
     parser.add_argument('--use_aug', action='store_true')
     parser.add_argument('--use_pretrained', type=str, help='Path to pre-trained model checkpoint to load')
@@ -81,8 +83,9 @@ def train():
     args = parser.parse_args()
 
     # Loads config file for fixed configs
-    f_config = open(args.config_file,'rb')
-    cfg = yaml.load(f_config, Loader=yaml.FullLoader)
+    cfg = OmegaConf.load(args.config_file)
+    
+    os.environ["WANDB_API_KEY"] = OmegaConf.load("keys.yaml")["WANDB_API_KEY"]
     
     # Set mode and modify model architecture accordingly
     cfg['mode'] = args.mode
@@ -122,7 +125,7 @@ def train():
     cfg['model']['drop_path_rate'] =args.drop_path
     cfg['model']['attn_p'] = args.attn_p
     cfg['model']['p'] = args.p
-    cfg['model']['vit_size'] = args.vit_size
+    # cfg['model']['model_size'] = args.model_size
     cfg['model']['disable_qkv_bias'] = not args.disable_qkv_bias
     cfg['model']['n_classes'] = len(args.classes_to_use)
     cfg['mode'] = args.mode
@@ -171,9 +174,9 @@ def train():
         sys.exit(0)
 
     # Init wandb
-    wandb_logger = WandbLogger(project="DAMIT_NEW", 
+    wandb_logger = WandbLogger(project="AD-NEXT", 
                                name=FILENAME, 
-                               tags=f'{args.savename}_{args.dataset}', config=cfg)
+                               tags=f'{args.savename}_{args.dataset}', config=OmegaConf.to_container(cfg))
     # wandb.run.log_code(".", include_fn=lambda path: path.endswith(".py") or path.endswith(".yaml"))
 
     for i, (train_index, test_index) in enumerate(skf.split(df, df['Group'])):
@@ -214,7 +217,7 @@ def train():
         logger.info(f'Test set labels ratio: {ratios_test}')
 
         ### MODEL ####
-        model = make_model(cfg, args)
+        model = make_vanilla_model(cfg, args)
         
         model = prepare_model_for_training(model, cfg)
         
@@ -239,7 +242,7 @@ def train():
                          epochs=cfg['training']['epochs'],
                          mode=cfg['mode'],
                          fold_i=i)
-        
+
         if os.path.exists(f'checkpoints/{FILENAME}/fold_{i}'):
             logger.info(f'Checkpoint folder for fold {i} already exists. Removing it.')
             # pause for 5 sec

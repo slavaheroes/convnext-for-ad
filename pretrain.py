@@ -79,7 +79,7 @@ def pretrain_model():
     print('-----------------------------')
 
     aug_prefix = 'aug' if args.use_aug else 'noaug'
-    FILENAME = f"MAE_pt_{int(args.mask_ratio*100)}_{args.savename}_{aug_prefix}_d_{'_'.join(args.datasets)}_seed_{args.seed}"
+    FILENAME = f"{cfg.model.type}_pt_{int(args.mask_ratio*100)}_{args.savename}_{aug_prefix}_d_{'_'.join(args.datasets)}_seed_{args.seed}"
 
     os.environ["WANDB_API_KEY"] = OmegaConf.load("keys.yaml")["WANDB_API_KEY"]
     run = wandb.init(project="AD-NEXT", name=FILENAME, config=OmegaConf.to_container(cfg), dir=os.path.join(args.output_dir, FILENAME),

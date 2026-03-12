@@ -58,6 +58,11 @@ class LitViT(L.LightningModule):
         #     logger.success(f"Loading SimCLR pretrained weights from {pre_trained_model_path}...")
         if pre_trained_model_path.endswith('.pth.tar'):
             checkpoint_model = checkpoint['net']
+        elif any(keyword in pre_trained_model_path for keyword in ['FCMAE_3D']) and pre_trained_model_path.endswith('.pth'):
+            from utils.utils import load_pretrained_checkpoint
+            self.model = load_pretrained_checkpoint(self.model, pre_trained_model_path, 'ConvNext_sparse')
+            logger.critical(f'Loaded pretrained weights from {pre_trained_model_path} using custom loading function for ConvNext_sparse')
+            return
         elif any(keyword in pre_trained_model_path for keyword in ['MAE', 'SimMIM', 'RubiksCube', 'UNETR']) and pre_trained_model_path.endswith('.pth'):
             checkpoint_model = checkpoint['net']
             for key in list(checkpoint_model.keys()):

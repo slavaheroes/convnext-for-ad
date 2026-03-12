@@ -51,7 +51,7 @@ SOLVER:
   beta2: 0.95
 
 TRANSFORMS:
-  spacing: [1.75, 1.75, 1.75]
+  spacing: [1, 1, 1]
   resize: [128, 128, 128]
   normalize_non_zero: True
   orientation: "RAS"

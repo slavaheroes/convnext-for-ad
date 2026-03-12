@@ -163,6 +163,8 @@ cython_debug/
 
 monai_logs/
 monai_cache/
+wandb/
+results/
 checkpoints
 data
 data/*

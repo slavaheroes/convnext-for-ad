@@ -57,7 +57,7 @@ SOLVER:
   cycle_limit: 1
 
 TRANSFORMS:
-  spacing: [1.75, 1.75, 1.75]
+  spacing: [1, 1, 1]
   resize: [128, 128, 128]
   orientation: "RAS"
   normalize_non_zero: True

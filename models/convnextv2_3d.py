@@ -155,7 +155,7 @@ class ConvNeXtV2_3D(nn.Module):
                 repeat_interleave(scale, axis=2).\
                 repeat_interleave(scale, axis=3)
         
-    def forward(self, x, mask=None):
+    def forward(self, x, mask=None, **kwargs):
         if mask is None:
             x = self.forward_features(x)
             x = self.head(x)

@@ -215,7 +215,7 @@ class SparseConvNeXtV2_3D(nn.Module):
                 repeat_interleave(scale, axis=2).\
                 repeat_interleave(scale, axis=3)
         
-    def forward(self, x, mask=None):
+    def forward(self, x, mask=None, **kwargs):
         num_stages = len(self.stages)
         x = self.downsample_layers[0](x)        
         mask = self.upsample_mask(mask, 2**(num_stages-1))
