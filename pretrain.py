@@ -55,7 +55,7 @@ def get_args():
     parser.add_argument('--output_dir', type=str, default='./checkpoints/', help='Directory to save pre-training outputs')
     parser.add_argument('--datasets', nargs='+', type=str, default=['IXI'], help='Datasets to use for pre-training MAE')
     parser.add_argument('--seed', type=int, default=7885, help='Experiment seed (for reproducible results)')
-    parser.add_argument('--mask_ratio', type=float, default=0.75, help='Mask ratio used for MAE')
+    parser.add_argument('--mask_ratio', type=float, default=0.6, help='Mask ratio used for MAE')
     parser.add_argument('--devices', type=str, help='GPU devices to use')
     parser.add_argument('--size', default='base', type=str, help='Model size (small, base, large)')
     parser.add_argument('--use_aug', action='store_true', help='Augmentations')
@@ -71,6 +71,10 @@ def pretrain_model():
     cfg = OmegaConf.load(args.config_file)
     set_seed(args.seed)
     dir_exists(args)
+    
+    cfg.model.kernel_size = args.kernel_size
+    cfg.model.downsampling = args.downsampling
+    cfg.model.decoder_embed_dim = args.decoder_dim
 
     print('-----------------------------')
     print('Selected devices: %s'%(args.devices))
@@ -79,7 +83,7 @@ def pretrain_model():
     print('-----------------------------')
 
     aug_prefix = 'aug' if args.use_aug else 'noaug'
-    FILENAME = f"{cfg.model.type}_pt_{int(args.mask_ratio*100)}_{args.savename}_{aug_prefix}_d_{'_'.join(args.datasets)}_seed_{args.seed}"
+    FILENAME = f"{cfg.model.arch}_pt_{int(args.mask_ratio*100)}_{args.savename}_{aug_prefix}_d_{'_'.join(args.datasets)}_seed_{args.seed}"
 
     os.environ["WANDB_API_KEY"] = OmegaConf.load("keys.yaml")["WANDB_API_KEY"]
     run = wandb.init(project="AD-NEXT", name=FILENAME, config=OmegaConf.to_container(cfg), dir=os.path.join(args.output_dir, FILENAME),

@@ -83,7 +83,7 @@ def prepare_pt_data(cfg, args):
             monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
             monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
             monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
-            monai.transforms.RandSpatialCropd(keys=["image"], roi_size=(80,80,80), max_roi_size=tuple(cfg.transforms.resize)),
+            # monai.transforms.RandSpatialCropd(keys=["image"], roi_size=(80,80,80), max_roi_size=tuple(cfg.transforms.resize)),
             monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),

@@ -4,10 +4,10 @@ training:
   checkpoints: './checkpoints/'
   batch_size: 32
   num_workers: 8
-  use_fp16: False
+  use_fp16: True
   saveckp_freq: 50
 model:
-  type: 'FCMAE_3D'
+  arch: 'FCMAE_3D'
   img_size: [128,128,128]
   in_chans: 1
   depths: [3, 3, 27, 3]
@@ -24,7 +24,7 @@ model:
   # drop_path_rate: 0.1
 optimizer:
   optimizer: 'adamw'
-  lr: 0.0001
+  lr: 0.002
   weight_decay: 0.0001
   min_lr: 0.0000001
   beta1: 0.9
