@@ -89,8 +89,8 @@ def prepare_pt_data(cfg, args):
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
             monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
-            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
-            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
+            # monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
+            # monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
             monai.transforms.ToTensord(keys=["image"])
             ])
     else:
