@@ -75,6 +75,7 @@ def pretrain_model():
     cfg.model.kernel_size = args.kernel_size
     cfg.model.downsampling = args.downsampling
     cfg.model.decoder_embed_dim = args.decoder_dim
+    cfg.model.padding = cfg.model.kernel_size // 2
 
     print('-----------------------------')
     print('Selected devices: %s'%(args.devices))

@@ -1,24 +1,15 @@
-TRAINING:
-  CUDA_DEVICE_ORDER: 'PCI_BUS_ID'
-  USE_GPU: True
-  EPOCHS: 600
-  CHECKPOINT: './checkpoints/'
-  LOGGING_PERIOD: 200
-  LOGGING_PATH: './logs/'
-  EARLY_STOPPING: False
-  EARLY_STOPPING_DELTA: 0.00001
-  EARLY_STOPPING_PATIENCE: 5
-  CHECKPOINT_TYPE: None
-
-TESTING:
-  USE_GPU: True
-
-MODEL:
-  TYPE: 'FCMAE_3D'
+training:
+  epochs: 600
+  warmup_epochs: 40
+  checkpoints: './checkpoints/'
+  batch_size: 32
+  num_workers: 8
+  use_fp16: True
+  saveckp_freq: 50
+model:
+  arch: 'FCMAE_3D'
   img_size: [128,128,128]
   in_chans: 1
-  n_classes: None
-  drop_path_rate: 0.1
   depths: [3, 3, 27, 3]
   dims: [64, 128, 256, 512]
   kernel_size: 7
@@ -29,31 +20,24 @@ MODEL:
   patch_size: 32
   mask_ratio: 0.6
   norm_pix_loss: False
-  encoder_type: 'convnextv2'
-
-IXI:
-  dataroot: "./data/IXI-T1/hdbet/IXI*/*T1.nii.gz"
-
-HCP:
-  dataroot: "./data/HCP/hdbet/*/hdbet_n4*1.nii.gz"
-
-DATALOADER:
-  BATCH_SIZE: 4
-  NUM_WORKERS: 8
-
-SOLVER:
-  optimizer: 'AdamW'
+  encoder_type: convnextv2
+  # drop_path_rate: 0.1
+optimizer:
+  optimizer: 'adamw'
   lr: 0.0001
-  weight_decay: 0.0001
-  warmup_epochs: 40
+  weight_decay: 0.005
   min_lr: 0.0000001
   beta1: 0.9
   beta2: 0.95
-
-TRANSFORMS:
+  clip_grad: 3
+transforms:
   spacing: [1, 1, 1]
   resize: [128, 128, 128]
   normalize_non_zero: True
   orientation: "RAS"
   cache_dir_train: None
   cache_dir_test: None
+IXI:
+  dataroot: "./data/IXI-T1/hdbet/IXI*/*T1.nii.gz"
+HCP:
+  dataroot: "./data/HCP/hdbet/*/hdbet_n4*1.nii.gz"

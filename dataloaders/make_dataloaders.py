@@ -76,23 +76,37 @@ def prepare_pt_data(cfg, args):
     
     if args.use_aug:
         print('Using data augmentations')
+        # train_transforms = monai.transforms.Compose([
+        #     monai.transforms.LoadImaged(keys=["image"]),
+        #     monai.transforms.EnsureChannelFirstd(keys=["image",]),
+        #     monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
+        #     monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+        #     monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
+        #     monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
+        #     # monai.transforms.RandSpatialCropd(keys=["image"], roi_size=(80,80,80), max_roi_size=tuple(cfg.transforms.resize)),
+        #     monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
+        #     monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
+        #     monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
+        #     monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
+        #     monai.transforms.ToTensord(keys=["image"])
+        #     ])
         train_transforms = monai.transforms.Compose([
             monai.transforms.LoadImaged(keys=["image"]),
             monai.transforms.EnsureChannelFirstd(keys=["image",]),
             monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
-            monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
             monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
+            monai.transforms.NormalizeIntensityd(keys=["image"], nonzero=cfg.transforms.normalize_non_zero),
             monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
-            # monai.transforms.RandSpatialCropd(keys=["image"], roi_size=(80,80,80), max_roi_size=tuple(cfg.transforms.resize)),
             monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
-            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
-            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
-            monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
-            monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
-            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
-            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
+            monai.transforms.RandFlipd(keys=["image"], prob=0.1, spatial_axis=0),
+            monai.transforms.RandFlipd(keys=["image"], prob=0.1, spatial_axis=1),
+            monai.transforms.RandFlipd(keys=["image"], prob=0.1, spatial_axis=2),
+            monai.transforms.RandRotate90d(keys=["image"], prob=0.1, max_k=3),
             monai.transforms.ToTensord(keys=["image"])
-            ])
+        ])
     else:
         print('No data augmentations used')
         train_transforms = monai.transforms.Compose([
@@ -234,25 +248,45 @@ def make_kfold_dataloaders(cfg, args, train_df, test_df, verbose=True):
 
     if args.use_aug:
         # old augmentation
+        # train_transforms = monai.transforms.Compose([
+        #     monai.transforms.LoadImaged(keys=["image"]),
+        #     monai.transforms.EnsureChannelFirstd(keys=["image"]),
+        #     monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
+        #     monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+        #     monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
+        #     monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
+        #     # monai.transforms.NormalizeIntensityd(keys=["image"], nonzero=cfg["TRANSFORMS"]["normalize_non_zero"]),
+        #     monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
+        #     monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
+        #     monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
+        #     monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2), # must be disabled
+        #     monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2), # must be disabled
+        #     # monai.transforms.RandGaussianNoised(keys=["image"], prob=0.2, mean=0.0, std=0.1), # must be disabled
+        #     monai.transforms.ToTensord(keys=["image", "label"])
+        # ])
+        
         train_transforms = monai.transforms.Compose([
             monai.transforms.LoadImaged(keys=["image"]),
             monai.transforms.EnsureChannelFirstd(keys=["image"]),
-            monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
-            monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
-            monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
+            monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
+            monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
             monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
-            # monai.transforms.NormalizeIntensityd(keys=["image"], nonzero=cfg["TRANSFORMS"]["normalize_non_zero"]),
-            monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
+            monai.transforms.NormalizeIntensityd(keys=["image"], nonzero=cfg.transforms.normalize_non_zero),
+            monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=0),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=1),
             monai.transforms.RandFlipd(keys=["image"], prob=0.2, spatial_axis=2),
             monai.transforms.RandRotate90d(keys=["image"], prob=0.2, max_k=3),
-            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2), # must be disabled
-            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2), # must be disabled
-            # monai.transforms.RandGaussianNoised(keys=["image"], prob=0.2, mean=0.0, std=0.1), # must be disabled
+            monai.transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=0.2),
+            monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2),
+            monai.transforms.RandGaussianNoised(keys=["image"], prob=0.2, mean=0.0, std=0.1), 
             monai.transforms.ToTensord(keys=["image", "label"])
         ])
+            
         
+    else:
         # train_transforms = monai.transforms.Compose([
         #     monai.transforms.LoadImaged(keys=["image"]),
         #     monai.transforms.EnsureChannelFirstd(keys=["image"]),
@@ -261,44 +295,41 @@ def make_kfold_dataloaders(cfg, args, train_df, test_df, verbose=True):
         #     monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
         #     monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
         #     monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
-        #     # spatial
-        #     monai.transforms.RandFlipd(keys=["image"], prob=0.3, spatial_axis=0),
-        #     monai.transforms.RandFlipd(keys=["image"], prob=0.3, spatial_axis=1),
-        #     monai.transforms.RandFlipd(keys=["image"], prob=0.3, spatial_axis=2),
-        #     monai.transforms.RandRotated(keys=["image"], prob=0.3, range_x=0.25, range_y=0.25, range_z=0.25),
-        #     monai.transforms.RandZoomd(keys=["image"], prob=0.3, min_zoom=0.75, max_zoom=1.25, mode="bilinear"),
-        #     # contrast
-        #     monai.transforms.RandGaussianNoised(keys=["image"], mean=0.0, std=0.08, prob=0.2),
-        #     monai.transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=0.2), # must be disabled
-        #     monai.transforms.RandBiasFieldd(keys=["image"], degree=2, coeff_range=(0.0, 0.1), prob=0.2),
-        #     monai.transforms.RandAdjustContrastd(keys=["image"], gamma=(0.5, 4.5), invert_image=False, retain_stats=False, prob=0.2),
-        #     monai.transforms.RandGaussianSharpend(keys=["image"], prob=0.2),
         #     monai.transforms.ToTensord(keys=["image", "label"])
         # ])
-            
-        
-    else:
         train_transforms = monai.transforms.Compose([
             monai.transforms.LoadImaged(keys=["image"]),
             monai.transforms.EnsureChannelFirstd(keys=["image"]),
             monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
-            monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
             monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
-            monai.transforms.CropForegroundd(keys=["image"], source_key="image"), 
+            monai.transforms.CropForegroundd(keys=["image"], source_key="image"),
+            monai.transforms.NormalizeIntensityd(keys=["image"], nonzero=cfg.transforms.normalize_non_zero),
             monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
             monai.transforms.ToTensord(keys=["image", "label"])
         ])
 
+
+    # test_transforms = monai.transforms.Compose([
+    #     monai.transforms.LoadImaged(keys=["image"]),
+    #     monai.transforms.EnsureChannelFirstd(keys=["image",]),
+    #     monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
+    #     monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
+    #     monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
+    #     monai.transforms.CropForegroundd(keys=["image"], source_key="image"),
+    #     monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
+    #     monai.transforms.ToTensord(keys=["image", "label"])
+    # ])
     test_transforms = monai.transforms.Compose([
         monai.transforms.LoadImaged(keys=["image"]),
         monai.transforms.EnsureChannelFirstd(keys=["image",]),
-        monai.transforms.Orientationd(keys=["image"], axcodes=cfg["transforms"]["orientation"]),
-        monai.transforms.ScaleIntensityRangePercentilesd(keys=["image"], lower=0.05, upper=99.95, b_min=-1, b_max=1, clip=True),
-        monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg["transforms"]["spacing"])),
+        monai.transforms.Orientationd(keys=["image"], axcodes=cfg.transforms.orientation),
+        monai.transforms.Spacingd(keys=["image"], pixdim=tuple(cfg.transforms.spacing)),
         monai.transforms.CropForegroundd(keys=["image"], source_key="image"),
-        monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg["transforms"]["resize"])),
+        monai.transforms.NormalizeIntensityd(keys=["image"], nonzero=cfg.transforms.normalize_non_zero),
+        monai.transforms.Resized(keys=["image"], spatial_size=tuple(cfg.transforms.resize)),
         monai.transforms.ToTensord(keys=["image", "label"])
     ])
+
     
     # train_transforms.set_random_state(args.seed)
     # test_transforms.set_random_state(args.seed)

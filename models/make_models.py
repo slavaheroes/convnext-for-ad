@@ -89,14 +89,14 @@ def make_vanilla_model(cfg, args):
             cfg['model']['dims'] = [16, 32, 64, 128]
 
         model = _models_factory[cfg.model.arch](
-            in_chans        = cfg['model']['in_chans'],
-            num_classes     = cfg['model']['n_classes'],
-            drop_path_rate  = cfg['model']['drop_path_rate'],
-            depths          = cfg['model']['depths'],
-            dims           = cfg['model']['dims'],
-            kernel_size    = cfg['model']['kernel_size'],
-            padding        = cfg['model']['kernel_size']//2,
-            downsampling   = cfg['model']['downsampling']
+            in_chans        = cfg.model.in_chans,
+            num_classes     = cfg.model.n_classes,
+            drop_path_rate  = cfg.model.drop_path_rate,
+            depths          = cfg.model.depths,
+            dims           = cfg.model.dims,
+            kernel_size    = cfg.model.kernel_size,
+            padding        = cfg.model.padding,
+            downsampling   = cfg.model.downsampling
         )
         
         print(f'ConvNeXtV2_3D model built with kernel_size={cfg["model"]["kernel_size"]},\

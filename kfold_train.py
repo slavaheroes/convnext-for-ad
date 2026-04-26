@@ -80,6 +80,8 @@ def train():
     parser.add_argument('--use_aug', action='store_true')
     parser.add_argument('--use_pretrained', type=str, help='Path to pre-trained model checkpoint to load')
     parser.add_argument('--mode', type=str, default='full', help='Mode: full, linear, etc.')
+    parser.add_argument('--kernel_size', type=int, default=7, help='Kernel size for patch embedding conv layer (if patch_embed_fun is conv)')
+    parser.add_argument('--downsampling', type=str, default='avgpool3d', help='Downsampling method for ViT (if patch_embed_fun is conv): conv or pool')
     args = parser.parse_args()
 
     # Loads config file for fixed configs
@@ -114,6 +116,11 @@ def train():
     df = pd.read_csv(replace_data_path(cfg[args.dataset]['labelsroot']))
     df = df[df['Group'].isin(args.classes_to_use)]
 
+    if cfg.model.arch == 'ConvNeXtV2_3D':
+        cfg.model.downsampling = args.downsampling
+        cfg.model.kernel_size = args.kernel_size
+        cfg.model.padding = args.kernel_size // 2
+    
     cfg['model']['patch_embed_fun'] = args.patch_embed_fun
     cfg['model']['patch_size'] = args.patch_size
     cfg['training']['epochs'] = args.epochs

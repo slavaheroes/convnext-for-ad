@@ -16,7 +16,7 @@ model:
   padding: 3
   downsampling: avgpool3d
   decoder_depth: 1
-  decoder_embed_dim: 768
+  decoder_embed_dim: 256
   patch_size: 32
   mask_ratio: 0.6
   norm_pix_loss: False
@@ -25,7 +25,7 @@ model:
 optimizer:
   optimizer: 'adamw'
   lr: 0.002
-  weight_decay: 0.0001
+  weight_decay: 0.001
   min_lr: 0.0000001
   beta1: 0.9
   beta2: 0.95

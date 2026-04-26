@@ -61,7 +61,7 @@ class Block(nn.Module):
         
 
     def forward(self, x):
-        input = x
+        x_input = x
         x = self.dwconv(x)
         x = x.permute(0, 2, 3, 4, 1) # (N, C, D, H, W) -> (N, D, H, W, C)
         x = self.norm(x)
@@ -70,8 +70,8 @@ class Block(nn.Module):
         x = self.grn(x)
         x = self.pwconv2(x)
         x = x.permute(0, 4, 1, 2, 3) # (N, D, H, W, C) -> (N, C, D, H, W)
-
-        x = input + self.drop_path(x)
+        
+        x = x_input + self.drop_path(x)
         return x
     
 class ConvNeXtV2_3D(nn.Module):

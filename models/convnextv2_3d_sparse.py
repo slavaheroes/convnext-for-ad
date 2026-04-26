@@ -178,7 +178,7 @@ class SparseConvNeXtV2_3D(nn.Module):
             elif downsampling == "maxpool3d":
                 downsample_layer = nn.Sequential(
                     MinkowskiLayerNorm(dims[i], eps=1e-6),
-                    MinkowskiMaxPooling(kernel_size=2, dimension=3),
+                    MinkowskiMaxPooling(kernel_size=2, stride=2, dimension=3),
                     MinkowskiConvolution(dims[i], dims[i+1], kernel_size=1, stride=1, bias=True, dimension=3),
                 )
             
