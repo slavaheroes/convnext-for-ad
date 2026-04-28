@@ -2,7 +2,7 @@ training:
   epochs: 600
   warmup_epochs: 40
   checkpoints: './checkpoints/'
-  batch_size: 32
+  batch_size: 8
   num_workers: 8
   use_fp16: True
   saveckp_freq: 50
@@ -16,7 +16,7 @@ model:
   padding: 3
   downsampling: avgpool3d
   decoder_depth: 1
-  decoder_embed_dim: 768
+  decoder_embed_dim: 256
   patch_size: 32
   mask_ratio: 0.6
   norm_pix_loss: False
@@ -24,8 +24,8 @@ model:
   # drop_path_rate: 0.1
 optimizer:
   optimizer: 'adamw'
-  lr: 0.0001
-  weight_decay: 0.005
+  lr: 0.002
+  weight_decay: 0.001
   min_lr: 0.0000001
   beta1: 0.9
   beta2: 0.95
@@ -41,3 +41,5 @@ IXI:
   dataroot: "./data/IXI-T1/hdbet/IXI*/*T1.nii.gz"
 HCP:
   dataroot: "./data/HCP/hdbet/*/hdbet_n4*1.nii.gz"
+BRATS2023:
+  dataroot: "./data/BRATS2023/ASNR-MICCAI-BraTS2023-GLI-Challenge-TrainingData/*/*t1n.nii.gz"

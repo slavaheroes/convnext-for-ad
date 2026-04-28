@@ -52,6 +52,10 @@ def prepare_pt_data(cfg, args):
         datapath_list = datapath_list + glob.glob(cfg['HCP']['dataroot'])
         print('Used HCP')
     
+    if "BRATS2023" in args.datasets:
+        datapath_list = datapath_list + glob.glob(cfg["BRATS2023"]["dataroot"])
+        print('Used BRATS2023')    
+        
     if "ADNI1" in args.datasets:
         datapath_list = datapath_list + glob.glob(cfg['ADNI1']['dataroot'])
         print('Used ADNI1')

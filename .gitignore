@@ -166,6 +166,7 @@ monai_cache/
 wandb/
 results/
 checkpoints
+notebooks/
 data
 data/*
 .ruff*
