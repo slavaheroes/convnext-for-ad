@@ -271,9 +271,14 @@ def remap_checkpoint_keys(ckpt):
             new_k = k + '.weight'
             if "downsample" in k:
                 # standard convolution 1x1
-                kv, dim = v.shape
-                kernel_size = 1
-                new_v = v.permute(1, 0).reshape(dim, kv, kernel_size, kernel_size, kernel_size)  
+                if len(v.shape) == 3:
+                    k, kv, dim = v.shape
+                    kernel_size = int(round(k**(1/3), 0)) # infer kernel size from the shape of the kernel weights
+                    new_v = v.permute(0, 2, 1).reshape(dim, kv, kernel_size, kernel_size, kernel_size)
+                elif len(v.shape) == 2:
+                    kv, dim = v.shape
+                    kernel_size = 1
+                    new_v = v.permute(1, 0).reshape(dim, kv, kernel_size, kernel_size, kernel_size)  
             elif "dwconv" in k:
                 # depthwise conv
                 kv, dim = v.shape

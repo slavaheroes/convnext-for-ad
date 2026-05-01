@@ -2,71 +2,51 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
 antlr4-python3-runtime==4.9.3
 anyio==4.12.1
-asttokens @ file:///opt/conda/conda-bld/asttokens_1646925590279/work
+asttokens
 astunparse==1.6.3
 attrs==22.2.0
-backcall @ file:///home/ktietz/src/ci/backcall_1611930011877/work
-beautifulsoup4 @ file:///opt/conda/conda-bld/beautifulsoup4_1650462163268/work
+backcall
+beautifulsoup4
 brotlipy==0.7.0
-certifi @ file:///croot/certifi_1671487769961/work/certifi
-cffi @ file:///croot/cffi_1670423208954/work
-chardet @ file:///home/builder/ci_310/chardet_1640804867535/work
-charset-normalizer @ file:///tmp/build/80754af9/charset-normalizer_1630003229654/work
+certifi
+cffi
 click==8.3.1
 cmake==4.2.3
 comm==0.2.3
 conda==23.1.0
-conda-build==3.23.3
-conda-content-trust @ file:///tmp/abs_5952f1c8-355c-4855-ad2e-538535021ba5h26t22e5/croots/recipe/conda-content-trust_1658126371814/work
-conda-package-handling @ file:///croot/conda-package-handling_1672865015732/work
-conda_package_streaming @ file:///croot/conda-package-streaming_1670508151586/work
 contourpy==1.3.2
-cryptography @ file:///croot/cryptography_1677533068310/work
 cycler==0.12.1
 debugpy==1.8.20
-decorator @ file:///opt/conda/conda-bld/decorator_1643638310831/work
 dnspython==2.3.0
 exceptiongroup==1.1.1
-executing @ file:///opt/conda/conda-bld/executing_1646925071911/work
 expecttest==0.1.4
 filelock==3.25.0
-flit_core @ file:///opt/conda/conda-bld/flit-core_1644941570762/work/source/flit_core
 fonttools==4.61.1
 fsspec==2026.2.0
 git-filter-repo==2.47.0
 gitdb==4.0.12
 GitPython==3.1.46
-glob2 @ file:///home/linux1/recipes/ci/glob2_1610991677669/work
-gmpy2 @ file:///tmp/build/80754af9/gmpy2_1645455533097/work
 h11==0.16.0
 hf-xet==1.3.2
 httpcore==1.0.9
 httpx==0.28.1
 huggingface_hub==1.5.0
 hypothesis==6.70.0
-idna @ file:///croot/idna_1666125576474/work
 importlib_resources==6.5.2
 ipykernel==7.2.0
-ipython @ file:///croot/ipython_1676582224036/work
-jedi @ file:///tmp/build/80754af9/jedi_1644315229345/work
-Jinja2 @ file:///croot/jinja2_1666908132255/work
 joblib==1.5.3
 jupyter_client==8.8.0
 jupyter_core==5.9.1
 kiwisolver==1.4.9
-libarchive-c @ file:///tmp/build/80754af9/python-libarchive-c_1617780486945/work
 lightning==2.3.1
 lightning-utilities==0.15.3
 lit==18.1.8
 loguru==0.7.3
 markdown-it-py==4.0.0
-MarkupSafe @ file:///opt/conda/conda-bld/markupsafe_1654597864307/work
 matplotlib==3.10.8
-matplotlib-inline @ file:///opt/conda/conda-bld/matplotlib-inline_1662014470464/work
 mdurl==0.1.2
 MinkowskiEngine==0.5.4
 mkl-fft==1.3.1
-mkl-random @ file:///home/builder/ci_310/mkl_random_1641843545607/work
 mkl-service==2.4.0
 monai==1.3.2
 mpmath==1.3.0
@@ -74,72 +54,41 @@ natsort==8.4.0
 nest-asyncio==1.6.0
 networkx==3.0
 nibabel==5.3.3
-numpy @ file:///croot/numpy_and_numpy_base_1672336185480/work
 omegaconf==2.3.0
 packaging==26.0
 pandas==2.3.3
-parso @ file:///opt/conda/conda-bld/parso_1641458642106/work
-pexpect @ file:///tmp/build/80754af9/pexpect_1605563209008/work
-pickleshare @ file:///tmp/build/80754af9/pickleshare_1606932040724/work
 Pillow==9.4.0
-pkginfo @ file:///croot/pkginfo_1666725041340/work
 platformdirs==4.9.4
-pluggy @ file:///tmp/build/80754af9/pluggy_1648024709248/work
-prompt-toolkit @ file:///croot/prompt-toolkit_1672387306916/work
 protobuf==6.33.5
-psutil @ file:///opt/conda/conda-bld/psutil_1656431268089/work
-ptyprocess @ file:///tmp/build/80754af9/ptyprocess_1609355006118/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
-pure-eval @ file:///opt/conda/conda-bld/pure_eval_1646925070566/work
-pycosat @ file:///croot/pycosat_1666805502580/work
-pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
 pydantic==2.12.5
 pydantic_core==2.41.5
 Pygments==2.19.2
-pyOpenSSL @ file:///croot/pyopenssl_1677607685877/work
 pyparsing==3.3.2
-PySocks @ file:///home/builder/ci_310/pysocks_1640793678128/work
 python-dateutil==2.9.0.post0
 python-etcd==0.4.5
-pytz @ file:///croot/pytz_1671697431263/work
-PyYAML @ file:///croot/pyyaml_1670514731622/work
 pyzmq==27.1.0
-requests @ file:///croot/requests_1678709721434/work
 rich==14.3.3
-ruamel.yaml @ file:///croot/ruamel.yaml_1666304550667/work
-ruamel.yaml.clib @ file:///croot/ruamel.yaml.clib_1666302247304/work
 ruff==0.15.4
 safetensors==0.7.0
 scikit-learn==1.7.2
 scipy==1.15.3
 sentry-sdk==2.54.0
 shellingham==1.5.4
-six @ file:///tmp/build/80754af9/six_1644875935023/work
 smmap==5.0.2
 sortedcontainers==2.4.0
-soupsieve @ file:///croot/soupsieve_1666296392845/work
-stack-data @ file:///opt/conda/conda-bld/stack_data_1646927590127/work
-sympy @ file:///croot/sympy_1668202399572/work
 threadpoolctl==3.6.0
 timm==1.0.3
-toml @ file:///tmp/build/80754af9/toml_1616166611790/work
-toolz @ file:///croot/toolz_1667464077321/work
 torch==2.0.0
 torchaudio==2.0.0
-torchdata @ file:///__w/_temp/conda_build_env/conda-bld/torchdata_1678741239947/work
 torchelastic==0.2.2
 torchmetrics==1.9.0
 torchtext==0.15.0
 torchvision==0.15.0
 tornado==6.5.5
-tqdm @ file:///opt/conda/conda-bld/tqdm_1664392687731/work
-traitlets @ file:///croot/traitlets_1671143879854/work
 triton==2.0.0
 typer==0.24.1
 types-dataclasses==0.6.6
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2025.3
-urllib3 @ file:///croot/urllib3_1673575502006/work
 wandb==0.23.0
-wcwidth @ file:///Users/ktietz/demo/mc3/conda-bld/wcwidth_1629357192024/work
-zstandard @ file:///croot/zstandard_1677013143055/work
