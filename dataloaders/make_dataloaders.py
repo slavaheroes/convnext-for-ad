@@ -65,9 +65,9 @@ def prepare_pt_data(cfg, args):
         print('Used ADNI2')
     
     if "OASIS3" in args.datasets: # have to include code for sorting out healthy subjects
-        datapath_temp_list = glob.glob(replace_data_path(cfg["OASIS3"]["dataroot"]))
+        datapath_temp_list = glob.glob(cfg["OASIS3"]["dataroot"])
         # Step 1: Read the cfg["OASIS3"]["labelsroot"] file into a DataFrame and select the "filename" column
-        df_healthy_oasis3 = pd.read_csv(replace_data_path(cfg["OASIS3"]["labelsroot"]))
+        df_healthy_oasis3 = pd.read_csv(cfg["OASIS3"]["labelsroot"])
         filenames = df_healthy_oasis3['filename'].tolist()
         # Step 2: Remove the .json ending from each entry in the list, replace it with .nii.gz, and add 'hdbet_' as a prefix
         filenames = ['hdbet_' + filename.replace('.json', '.nii.gz') for filename in filenames]
@@ -159,13 +159,13 @@ def make_aibl_test_dataloader(cfg, args, verbose=True):
     ])
     # test_transforms.set_random_state(args.seed)
 
-    nii_list = natsorted(glob.glob(replace_data_path(cfg[dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz'))
+    nii_list = natsorted(glob.glob(cfg[dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz')
     if verbose:
         print(f'{len(nii_list)} nii files found.')
     
     test_datalist = []
 
-    test_df = pd.read_csv(replace_data_path(cfg[dataset]['labelsroot']))
+    test_df = pd.read_csv(cfg[dataset]['labelsroot'])
     test_df = test_df[test_df['DXCURREN'].isin(classes_to_use)]
     for _, row in test_df.iterrows():
         label = classes_to_use.index(row["DXCURREN"])
@@ -211,13 +211,13 @@ def make_adni2_test_dataloader(cfg, args, verbose=True):
     ])
     # test_transforms.set_random_state(args.seed)
 
-    nii_list = natsorted(glob.glob(replace_data_path(cfg[dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz'))
+    nii_list = natsorted(glob.glob(cfg[dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz')
     if verbose:
         print(f'{len(nii_list)} nii files found.')
     
     test_datalist = []
 
-    test_df = pd.read_csv(replace_data_path(cfg[dataset]['labelsroot']))
+    test_df = pd.read_csv(cfg[dataset]['labelsroot'])
     test_df = test_df[test_df['Group'].isin(args.classes_to_use)]
     for _, row in test_df.iterrows():
         label = args.classes_to_use.index(row["Group"])
@@ -338,7 +338,7 @@ def make_kfold_dataloaders(cfg, args, train_df, test_df, verbose=True):
     # train_transforms.set_random_state(args.seed)
     # test_transforms.set_random_state(args.seed)
     
-    nii_list = natsorted(glob.glob(replace_data_path(cfg[args.dataset]['dataroot']) + '*/hdbet_*[!mask].nii.gz'))
+    nii_list = natsorted(glob.glob(cfg[args.dataset]['dataroot'] + '*/hdbet_*[!mask].nii.gz'))
     if verbose:
         print(f'{len(nii_list)} nii files found.')
 
